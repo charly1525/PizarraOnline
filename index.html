@@ -8,6 +8,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/9.4.3/mermaid.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            startup: { typeset: false } // Lo ejecutamos manualmente después del Markdown
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -37,24 +48,15 @@
         p.subtitle { text-align: center; color: #d1e8e2; margin-bottom: 25px; font-weight: 500; font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; line-height: 1.4; }
         label { font-weight: bold; margin-top: 15px; display: block; font-size: 15px; color: #e8f4f1; font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;}
 
-        /* Input para múltiples imágenes */
         input[type="file"] {
             width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 15px;
             background: rgba(255, 255, 255, 0.1); border: 2px dashed #a8c2b7; 
             border-radius: 6px; color: white; box-sizing: border-box; cursor: pointer;
         }
 
-        /* Galería de vistas previas */
-        #preview-container {
-            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 15px;
-        }
-        .preview-img {
-            max-width: 100px; max-height: 100px; border: 4px solid #fdfdfd; 
-            box-shadow: 2px 4px 8px rgba(0,0,0,0.4); transform: rotate(-2deg); background: white;
-            object-fit: cover;
-        }
+        #preview-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 15px; }
+        .preview-img { max-width: 100px; max-height: 100px; border: 4px solid #fdfdfd; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); transform: rotate(-2deg); background: white; object-fit: cover; }
 
-        /* Botones */
         .btn-group { display: flex; gap: 10px; margin-top: 15px; }
         button {
             flex: 1; padding: 14px; color: #333; border-radius: 8px; 
@@ -70,21 +72,18 @@
 
         #loader { text-align: center; display: none; margin-top: 20px; font-weight: bold; color: #f1c40f; font-family: 'Comic Sans MS', sans-serif; font-size: 16px; }
 
-        /* Resultado y Estilos Dinámicos (Markdown/Mermaid) */
         #resultado {
             margin-top: 25px; padding: 20px 30px 30px 45px; background-color: #fffdf8;
             background-image: linear-gradient(90deg, transparent 35px, #e74c3c 35px, #e74c3c 37px, transparent 37px), repeating-linear-gradient(transparent, transparent 27px, #abced4 28px);
             border-radius: 2px; display: none; line-height: 28px; color: #2c3e50; font-size: 16px; box-shadow: 2px 4px 10px rgba(0,0,0,0.3); position: relative;
+            /* Soporte para scroll si la ecuación es muy larga */
+            overflow-x: auto; 
         }
-        #resultado::before {
-            content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%) rotate(2deg); width: 100px; height: 25px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
+        #resultado::before { content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%) rotate(2deg); width: 100px; height: 25px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-        /* MAGIA: Centrado de títulos generado por Markdown */
         #resultado h1, #resultado h2, #resultado h3 { text-align: center; margin-top: 20px; margin-bottom: 10px; color: #2b5b43; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px; display: inline-block; width: 100%; box-sizing: border-box;}
         #resultado ul { margin-top: 0; padding-left: 20px; }
         
-        /* Contenedor del mapa conceptual */
         .mermaid { background: white; border: 2px solid #2c3e50; padding: 15px; border-radius: 8px; display: flex; justify-content: center; margin: 20px 0; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     </style>
 </head>
@@ -104,17 +103,16 @@
         <button id="btnDescargar">📄 Descargar PDF</button>
     </div>
 
-    <div id="loader">Extrayendo información y armando diagramas... ⏳</div>
+    <div id="loader">Extrayendo información y fórmulas matemáticas... ⏳</div>
     <div id="resultado"></div>
 </div>
 
 <script>
-    // Inicializar la librería de mapas conceptuales
     mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
 
     const imageUpload = document.getElementById('imageUpload');
     const previewContainer = document.getElementById('preview-container');
-    let base64ImagesArray = []; // Ahora es un arreglo
+    let base64ImagesArray = []; 
 
     imageUpload.addEventListener('change', function(event) {
         previewContainer.innerHTML = '';
@@ -128,7 +126,6 @@
                 img.src = e.target.result;
                 img.className = 'preview-img';
                 previewContainer.appendChild(img);
-                // Extraer base64 y guardarlo en el array
                 base64ImagesArray.push(e.target.result.split(',')[1]);
             };
             reader.readAsDataURL(file);
@@ -155,7 +152,6 @@
             const response = await fetch("/api/resumen", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                // Enviamos el array completo al backend
                 body: JSON.stringify({ images: base64ImagesArray }) 
             });
 
@@ -164,22 +160,23 @@
 
             let textoCrudo = data.resumen;
 
-            // 1. Procesar Markdown PRIMERO (marked convierte los bloques ```mermaid en <pre><code class="language-mermaid">)</pre>
+            // 1. Extraer los bloques de Mermaid de forma segura
+            const mermaidRegex = /```mermaid([\s\S]*?)```/g;
+            textoCrudo = textoCrudo.replace(mermaidRegex, '<div class="mermaid">$1</div>');
+
+            // 2. Procesar Markdown (títulos, negritas, viñetas)
             resultadoDiv.innerHTML = marked.parse(textoCrudo);
             resultadoDiv.style.display = 'block';
 
-            // 2. Extraer y preparar los gráficos Mermaid de forma limpia (evitando que el HTML lo rompa)
-            document.querySelectorAll('code.language-mermaid').forEach(el => {
-                const div = document.createElement('div');
-                div.className = 'mermaid';
-                div.textContent = el.textContent; // Extrae solo texto puro
-                el.parentElement.replaceWith(div); // Reemplaza la caja de código por el lienzo del gráfico
-            });
-
-            // 3. Renderizar los mapas conceptuales gráficos
+            // 3. Renderizar Gráficos Mermaid
             mermaid.init(undefined, document.querySelectorAll('.mermaid'));
 
-            // 4. Mostrar botón de descarga
+            // 4. NUEVO: Renderizar Matemáticas con MathJax
+            if (window.MathJax) {
+                await MathJax.typesetPromise([resultadoDiv]);
+            }
+
+            // 5. Mostrar botón de descarga SOLO cuando todo esté renderizado
             btnDescargar.style.display = 'block';
 
         } catch (error) {
@@ -190,7 +187,6 @@
         }
     });
 
-    // Función para exportar el apunte a PDF manteniendo el diseño del cuaderno
     document.getElementById('btnDescargar').addEventListener('click', () => {
         const elemento = document.getElementById('resultado');
         const opt = {
@@ -200,7 +196,6 @@
             html2canvas:  { scale: 2, useCORS: true },
             jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-        // Generar y descargar
         html2pdf().set(opt).from(elemento).save();
     });
 </script>
