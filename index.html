@@ -77,36 +77,14 @@
             margin-top: 25px; padding: 20px 30px 30px 45px; background-color: #fffdf8;
             background-image: linear-gradient(90deg, transparent 35px, #e74c3c 35px, #e74c3c 37px, transparent 37px), repeating-linear-gradient(transparent, transparent 27px, #abced4 28px);
             border-radius: 2px; display: none; line-height: 28px; color: #2c3e50; font-size: 16px; box-shadow: 2px 4px 10px rgba(0,0,0,0.3); position: relative;
-            /* Se mantiene el overflow aquí para los textos largos que no sean gráficos */
             overflow-x: auto; 
         }
         #resultado::before { content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%) rotate(2deg); width: 100px; height: 25px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-        #resultado h1, #resultado h2, #resultado h3 { text-align: center; margin-top: 20px; margin-bottom: 10px; color: #2b5b43; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px; display: inline-block; width: 100%; box-sizing: border-box; page-break-after: avoid; }
+        #resultado h1, #resultado h2, #resultado h3 { text-align: center; margin-top: 20px; margin-bottom: 10px; color: #2b5b43; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px; display: inline-block; width: 100%; box-sizing: border-box;}
         #resultado ul { margin-top: 0; padding-left: 20px; }
         
-        /* CAMBIOS CLAVE: Quitamos overflow-x de mermaid, forzamos anchos al 100% y centramos todo */
-        .mermaid { 
-            background: white; 
-            border: 2px solid #2c3e50; 
-            padding: 15px; 
-            border-radius: 8px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            margin: 20px 0; 
-            width: 100%; 
-            box-sizing: border-box;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
-            page-break-inside: avoid; 
-            break-inside: avoid; 
-        }
-        
-        .mermaid svg { 
-            width: 100% !important; 
-            max-width: 100% !important; 
-            height: auto !important; 
-        }
+        .mermaid { background: white; border: 2px solid #2c3e50; padding: 15px; border-radius: 8px; display: flex; justify-content: center; margin: 20px 0; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -210,15 +188,6 @@
             // 3. Renderizar los mapas conceptuales
             if (typeof mermaid !== 'undefined') {
                 mermaid.init(undefined, document.querySelectorAll('.mermaid'));
-                
-                // ATAQUE DIRECTO AL SVG: Le arrancamos las medidas fijas que pone Mermaid por defecto
-                // Obligándolo a acatar nuestro CSS y reducirse para caber en la hoja.
-                document.querySelectorAll('.mermaid svg').forEach(svg => {
-                    svg.removeAttribute('width');
-                    svg.removeAttribute('height');
-                    svg.style.width = '100%';
-                    svg.style.height = 'auto';
-                });
             }
 
             // 4. Renderizar Matemáticas con MathJax
@@ -244,8 +213,7 @@
                 filename:     'mis_apuntes_estructurados.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak:    { mode: ['css', 'legacy'] }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             html2pdf().set(opt).from(elemento).save();
         } else {
