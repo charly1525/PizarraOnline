@@ -12,12 +12,16 @@ export default async function handler(req, res) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     
     // EL PROMPT MAESTRO (Prompt Engineering)
+    // EL PROMPT MAESTRO (Prompt Engineering Blindado)
     const prompt = `Eres un experto académico. Analiza las siguientes imágenes de apuntes. REGLAS ESTRICTAS:
-    1. VE DIRECTO AL GRANO. CERO introducciones, saludos ni confirmaciones (No digas "Aquí tienes...", empieza directamente con el contenido).
-    2. Múltiples materias/temas: Evalúa si las imágenes pertenecen a la misma materia o a diferentes. Agrupa y titula el contenido estructuradamente indicando los cambios de materia.
-    3. Títulos: Usa Markdown estándar (# Título principal, ## Subtítulo).
-    4. DIAGRAMAS: Si en la imagen detectas mapas conceptuales, diagramas de flujo o esquemas lógicos, DEBES traducirlos estrictamente a sintaxis de Mermaid.js, envolviéndolo en un bloque \`\`\`mermaid [código] \`\`\`.
-    5. Transcribe, limpia y estructura el texto restante con viñetas para facilitar el estudio.`;
+    1. VE DIRECTO AL GRANO. CERO introducciones, saludos ni confirmaciones.
+    2. Múltiples materias/temas: Identifica cambios de materia y titula usando Markdown (# Título principal, ## Subtítulo).
+    3. DIAGRAMAS (REGLAS VITALES): Si hay diagramas, tradúcelos a Mermaid.js envueltos en \`\`\`mermaid. 
+       - Usa SIEMPRE 'graph TD'.
+       - Los IDs de los nodos DEBEN ser solo letras (A, B, C). 
+       - El texto de cada nodo DEBE estar OBLIGATORIAMENTE entre comillas dobles. 
+       - Ejemplo perfecto: A["Concepto (con paréntesis)"] --> B["Concepto 2"]
+    4. Transcribe, limpia y estructura el texto restante con viñetas.`;
 
     // Armar el payload dinámicamente con todas las imágenes que suba el usuario
     const parts = [{ text: prompt }];
