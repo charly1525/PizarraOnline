@@ -14,7 +14,7 @@
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']]
             },
-            startup: { typeset: false } // Lo ejecutamos manualmente después del Markdown
+            startup: { typeset: false } // Lo ejecutamos manualmente después de Mermaid
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -76,7 +76,6 @@
             margin-top: 25px; padding: 20px 30px 30px 45px; background-color: #fffdf8;
             background-image: linear-gradient(90deg, transparent 35px, #e74c3c 35px, #e74c3c 37px, transparent 37px), repeating-linear-gradient(transparent, transparent 27px, #abced4 28px);
             border-radius: 2px; display: none; line-height: 28px; color: #2c3e50; font-size: 16px; box-shadow: 2px 4px 10px rgba(0,0,0,0.3); position: relative;
-            /* Soporte para scroll si la ecuación es muy larga */
             overflow-x: auto; 
         }
         #resultado::before { content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%) rotate(2deg); width: 100px; height: 25px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -91,9 +90,9 @@
 
 <div class="container">
     <h1>📝 Pizarra a Resumen </h1>
-    <p class="subtitle">Sube fotografías de pizarrones o libretas y la plataforma las transformará en apuntes digitales estructurados, mapas conceptuales y listos para descargar.</p>
+    <p class="subtitle">Optimiza tu tiempo de estudio. Sube fotografías de pizarrones o libretas y la plataforma las transformará en apuntes digitales estructurados y listos para repasar.</p>
 
-    <label for="imageUpload">Selecciona una o varias fotos a la vez:</label>
+    <label for="imageUpload">Agrega aquí tus fotos:</label>
     <input type="file" id="imageUpload" accept="image/*" multiple>
     
     <div id="preview-container"></div>
@@ -103,7 +102,7 @@
         <button id="btnDescargar">📄 Descargar PDF</button>
     </div>
 
-    <div id="loader">Extrayendo información y fórmulas matemáticas... ⏳</div>
+    <div id="loader">Analizando imágenes y armando gráficos... ⏳</div>
     <div id="resultado"></div>
 </div>
 
@@ -135,70 +134,4 @@
     document.getElementById('btnProcesar').addEventListener('click', async () => {
         const resultadoDiv = document.getElementById('resultado');
         const loader = document.getElementById('loader');
-        const btn = document.getElementById('btnProcesar');
-        const btnDescargar = document.getElementById('btnDescargar');
-
-        if (base64ImagesArray.length === 0) {
-            alert("Por favor, sube al menos una imagen.");
-            return;
-        }
-
-        btn.disabled = true;
-        btnDescargar.style.display = 'none';
-        loader.style.display = 'block';
-        resultadoDiv.style.display = 'none';
-
-        try {
-            const response = await fetch("/api/resumen", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ images: base64ImagesArray }) 
-            });
-
-            const data = await response.json();
-            if (!response.ok || data.error) throw new Error(data.error || "Error en el servidor");
-
-            let textoCrudo = data.resumen;
-
-            // 1. Extraer los bloques de Mermaid de forma segura
-            const mermaidRegex = /```mermaid([\s\S]*?)```/g;
-            textoCrudo = textoCrudo.replace(mermaidRegex, '<div class="mermaid">$1</div>');
-
-            // 2. Procesar Markdown (títulos, negritas, viñetas)
-            resultadoDiv.innerHTML = marked.parse(textoCrudo);
-            resultadoDiv.style.display = 'block';
-
-            // 3. Renderizar Gráficos Mermaid
-            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
-
-            // 4. NUEVO: Renderizar Matemáticas con MathJax
-            if (window.MathJax) {
-                await MathJax.typesetPromise([resultadoDiv]);
-            }
-
-            // 5. Mostrar botón de descarga SOLO cuando todo esté renderizado
-            btnDescargar.style.display = 'block';
-
-        } catch (error) {
-            alert("Error: " + error.message);
-        } finally {
-            btn.disabled = false;
-            loader.style.display = 'none';
-        }
-    });
-
-    document.getElementById('btnDescargar').addEventListener('click', () => {
-        const elemento = document.getElementById('resultado');
-        const opt = {
-            margin:       10,
-            filename:     'mis_apuntes_estructurados.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(elemento).save();
-    });
-</script>
-
-</body>
-</html>
+        const btn = document.
