@@ -14,7 +14,7 @@
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']]
             },
-            startup: { typeset: false } // Lo ejecutamos manualmente después de Mermaid
+            startup: { typeset: false } 
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -54,6 +54,7 @@
             border-radius: 6px; color: white; box-sizing: border-box; cursor: pointer;
         }
 
+        /* Contenedor seguro para múltiples fotos */
         #preview-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 15px; }
         .preview-img { max-width: 100px; max-height: 100px; border: 4px solid #fdfdfd; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); transform: rotate(-2deg); background: white; object-fit: cover; }
 
@@ -107,19 +108,30 @@
 </div>
 
 <script>
-    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+    // Inicialización blindada
+    try {
+        if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+    } catch (e) { console.warn("Mermaid inicializó con retraso"); }
 
     const imageUpload = document.getElementById('imageUpload');
     const previewContainer = document.getElementById('preview-container');
     let base64ImagesArray = []; 
 
+    // Evento de selección de fotos súper compatible
     imageUpload.addEventListener('change', function(event) {
+        if (!previewContainer) return; // Evita crasheos si el HTML está incompleto
+        
         previewContainer.innerHTML = '';
         base64ImagesArray = [];
         const files = event.target.files;
         
-        for (let file of files) {
+        if (!files || files.length === 0) return;
+
+        // Bucle "Old School" para evitar bugs en navegadores estrictos
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
             const reader = new FileReader();
+            
             reader.onload = function(e) {
                 const img = document.createElement('img');
                 img.src = e.target.result;
@@ -134,4 +146,81 @@
     document.getElementById('btnProcesar').addEventListener('click', async () => {
         const resultadoDiv = document.getElementById('resultado');
         const loader = document.getElementById('loader');
-        const btn = document.
+        const btn = document.getElementById('btnProcesar');
+        const btnDescargar = document.getElementById('btnDescargar');
+
+        if (base64ImagesArray.length === 0) {
+            alert("Por favor, sube al menos una imagen.");
+            return;
+        }
+
+        btn.disabled = true;
+        btnDescargar.style.display = 'none';
+        loader.style.display = 'block';
+        resultadoDiv.style.display = 'none';
+
+        try {
+            const response = await fetch("/api/resumen", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ images: base64ImagesArray }) 
+            });
+
+            const data = await response.json();
+            if (!response.ok || data.error) throw new Error(data.error || "Error en el servidor");
+
+            // 1. Procesar Markdown de forma segura
+            if (typeof marked !== 'undefined') {
+                resultadoDiv.innerHTML = marked.parse(data.resumen);
+            } else {
+                resultadoDiv.innerText = data.resumen; // Fallback si falla el internet
+            }
+            resultadoDiv.style.display = 'block';
+
+            // 2. Extraer Mermaid
+            document.querySelectorAll('code.language-mermaid').forEach(el => {
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = el.textContent; 
+                el.parentElement.replaceWith(div);
+            });
+
+            // 3. Renderizar los mapas conceptuales
+            if (typeof mermaid !== 'undefined') {
+                mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+            }
+
+            // 4. Renderizar Matemáticas con MathJax
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                await MathJax.typesetPromise([resultadoDiv]);
+            }
+
+            btnDescargar.style.display = 'block';
+
+        } catch (error) {
+            alert("Hubo un error de conexión: " + error.message);
+        } finally {
+            btn.disabled = false;
+            loader.style.display = 'none';
+        }
+    });
+
+    document.getElementById('btnDescargar').addEventListener('click', () => {
+        const elemento = document.getElementById('resultado');
+        if (typeof html2pdf !== 'undefined') {
+            const opt = {
+                margin:       10,
+                filename:     'mis_apuntes_estructurados.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(elemento).save();
+        } else {
+            alert("La herramienta de PDF se está cargando, intenta en un segundo.");
+        }
+    });
+</script>
+
+</body>
+</html>
