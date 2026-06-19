@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pizarra a Resumen</title>
     <style>
+        /* Fondo cálido como una mesa de escritorio */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #0f0f11;
-            color: #eeeeee;
+            background-color: #f4ecd8;
+            background-image: radial-gradient(#d5c3a1 1px, transparent 1px);
+            background-size: 20px 20px;
+            color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -16,37 +19,146 @@
             margin: 0;
             padding: 20px;
         }
+
+        /* Contenedor estilo Pizarrón de la escuela */
         .container {
-            background: #18181c;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            background: #2b5b43; /* Verde pizarrón */
+            padding: 35px 30px;
+            border-radius: 8px;
+            /* Marco de madera */
+            border: 12px solid #8b5a2b; 
+            box-shadow: 
+                inset 0 0 20px rgba(0,0,0,0.3), /* Sombra interior del pizarrón */
+                10px 15px 25px rgba(0,0,0,0.3); /* Sombra exterior en el escritorio */
             max-width: 600px;
             width: 100%;
-            border: 1px solid #2c2c35;
         }
-        h1 { color: #ffffff; font-size: 24px; text-align: center; margin-bottom: 5px; }
-        p.subtitle { text-align: center; color: #9a9a1a; margin-bottom: 25px; font-weight: bold;}
-        label { font-weight: bold; margin-top: 15px; display: block; font-size: 14px; color: #b5b5bd;}
+
+        /* Texto estilo tiza */
+        h1 { 
+            color: #fdfdfd; 
+            font-size: 28px; 
+            text-align: center; 
+            margin-bottom: 5px; 
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+        }
+        
+        p.subtitle { 
+            text-align: center; 
+            color: #d1e8e2; 
+            margin-bottom: 25px; 
+            font-weight: 500;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            line-height: 1.4;
+        }
+
+        label { 
+            font-weight: bold; 
+            margin-top: 15px; 
+            display: block; 
+            font-size: 15px; 
+            color: #e8f4f1;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+        }
+
+        /* Zona de subida de imagen */
         input[type="file"] {
-            width: 100%; padding: 10px; margin-top: 5px; margin-bottom: 15px;
-            background: #222227; border: 1px solid #3a3a44; border-radius: 6px; 
-            color: white; box-sizing: border-box;
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 8px; 
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.1); 
+            border: 2px dashed #a8c2b7; 
+            border-radius: 6px; 
+            color: white; 
+            box-sizing: border-box;
+            cursor: pointer;
         }
+
+        /* Botón estilo Lápiz Escolar */
         button {
-            width: 100%; padding: 12px; background-color: #c41e3a; color: white;
-            border: none; border-radius: 6px; font-size: 16px; font-weight: bold;
-            cursor: pointer; transition: background 0.3s; margin-top: 10px;
+            width: 100%; 
+            padding: 14px; 
+            background-color: #f1c40f; /* Amarillo lápiz */
+            color: #333;
+            border: 3px solid #d4ac0d; 
+            border-radius: 8px; 
+            font-size: 18px; 
+            font-weight: 900;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            cursor: pointer; 
+            transition: transform 0.2s, background 0.3s; 
+            margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
-        button:hover { background-color: #a0182e; }
-        button:disabled { background-color: #4a4a52; cursor: not-allowed; }
-        #loader { text-align: center; display: none; margin-top: 15px; font-weight: bold; color: #ff9f43; }
+        button:hover { 
+            background-color: #f39c12; 
+            transform: translateY(-2px);
+        }
+        button:disabled { 
+            background-color: #bdc3c7; 
+            border-color: #95a5a6;
+            color: #7f8c8d;
+            cursor: not-allowed; 
+            transform: none;
+            box-shadow: none;
+        }
+
+        #loader { 
+            text-align: center; 
+            display: none; 
+            margin-top: 20px; 
+            font-weight: bold; 
+            color: #f1c40f; 
+            font-family: 'Comic Sans MS', sans-serif;
+            font-size: 16px;
+        }
+
+        /* Vista previa estilo foto impresa o polaroid */
+        #preview { 
+            max-width: 90%; 
+            margin: 15px auto; 
+            display: none; 
+            border: 8px solid #fdfdfd; 
+            box-shadow: 3px 5px 15px rgba(0,0,0,0.4); 
+            transform: rotate(-2deg); /* Ligeramente inclinada */
+            background: white;
+        }
+
+        /* Resultado estilo Hoja de Cuaderno Rayada */
         #resultado {
-            margin-top: 20px; padding: 15px; background: #1e272e;
-            border-left: 5px solid #c41e3a; border-radius: 4px; display: none;
-            white-space: pre-wrap; line-height: 1.6; color: #dcdcdc;
+            margin-top: 25px; 
+            padding: 10px 20px 20px 45px; /* Espacio extra a la izq para el margen rojo */
+            background-color: #fffdf8;
+            /* Crear las líneas del cuaderno */
+            background-image: 
+                linear-gradient(90deg, transparent 35px, #e74c3c 35px, #e74c3c 37px, transparent 37px), /* Línea roja vertical */
+                repeating-linear-gradient(transparent, transparent 27px, #abced4 28px); /* Líneas azules horizontales */
+            border-radius: 2px; 
+            display: none;
+            white-space: pre-wrap; 
+            line-height: 28px; /* Debe coincidir con las líneas azules */
+            color: #2c3e50;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 16px;
+            box-shadow: 2px 4px 10px rgba(0,0,0,0.3);
+            position: relative;
         }
-        #preview { max-width: 100%; margin-top: 10px; border-radius: 6px; display: none; border: 1px solid #3a3a44; }
+        
+        /* Cinta adhesiva decorativa para la hoja de cuaderno */
+        #resultado::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%) rotate(2deg);
+            width: 100px;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -57,7 +169,10 @@
 
     <label for="imageUpload">Agrega aquí tus fotos</label>
     <input type="file" id="imageUpload" accept="image/*">
-    <img id="preview" alt="Vista previa de la imagen">
+    
+    <div style="text-align: center;">
+        <img id="preview" alt="Vista previa de la imagen">
+    </div>
 
     <button id="btnProcesar">Generar apuntes </button>
 
