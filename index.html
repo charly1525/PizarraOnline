@@ -54,6 +54,7 @@
             border-radius: 6px; color: white; box-sizing: border-box; cursor: pointer;
         }
 
+        /* Contenedor seguro para múltiples fotos */
         #preview-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 15px; }
         .preview-img { max-width: 100px; max-height: 100px; border: 4px solid #fdfdfd; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); transform: rotate(-2deg); background: white; object-fit: cover; }
 
@@ -76,14 +77,36 @@
             margin-top: 25px; padding: 20px 30px 30px 45px; background-color: #fffdf8;
             background-image: linear-gradient(90deg, transparent 35px, #e74c3c 35px, #e74c3c 37px, transparent 37px), repeating-linear-gradient(transparent, transparent 27px, #abced4 28px);
             border-radius: 2px; display: none; line-height: 28px; color: #2c3e50; font-size: 16px; box-shadow: 2px 4px 10px rgba(0,0,0,0.3); position: relative;
+            /* Se mantiene el overflow aquí para los textos largos que no sean gráficos */
             overflow-x: auto; 
         }
         #resultado::before { content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%) rotate(2deg); width: 100px; height: 25px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-        #resultado h1, #resultado h2, #resultado h3 { text-align: center; margin-top: 20px; margin-bottom: 10px; color: #2b5b43; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px; display: inline-block; width: 100%; box-sizing: border-box;}
+        #resultado h1, #resultado h2, #resultado h3 { text-align: center; margin-top: 20px; margin-bottom: 10px; color: #2b5b43; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px; display: inline-block; width: 100%; box-sizing: border-box; page-break-after: avoid; }
         #resultado ul { margin-top: 0; padding-left: 20px; }
         
-        .mermaid { background: white; border: 2px solid #2c3e50; padding: 15px; border-radius: 8px; display: flex; justify-content: center; margin: 20px 0; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        /* CAMBIOS CLAVE: Quitamos overflow-x de mermaid, forzamos anchos al 100% y centramos todo */
+        .mermaid { 
+            background: white; 
+            border: 2px solid #2c3e50; 
+            padding: 15px; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            margin: 20px 0; 
+            width: 100%; 
+            box-sizing: border-box;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            page-break-inside: avoid; 
+            break-inside: avoid; 
+        }
+        
+        .mermaid svg { 
+            width: 100% !important; 
+            max-width: 100% !important; 
+            height: auto !important; 
+        }
     </style>
 </head>
 <body>
@@ -107,6 +130,7 @@
 </div>
 
 <script>
+    // Inicialización blindada
     try {
         if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
     } catch (e) { console.warn("Mermaid inicializó con retraso"); }
@@ -115,8 +139,9 @@
     const previewContainer = document.getElementById('preview-container');
     let base64ImagesArray = []; 
 
+    // Evento de selección de fotos súper compatible
     imageUpload.addEventListener('change', function(event) {
-        if (!previewContainer) return; 
+        if (!previewContainer) return; // Evita crasheos si el HTML está incompleto
         
         previewContainer.innerHTML = '';
         base64ImagesArray = [];
@@ -124,6 +149,7 @@
         
         if (!files || files.length === 0) return;
 
+        // Bucle "Old School" para evitar bugs en navegadores estrictos
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const reader = new FileReader();
@@ -165,13 +191,15 @@
             const data = await response.json();
             if (!response.ok || data.error) throw new Error(data.error || "Error en el servidor");
 
+            // 1. Procesar Markdown de forma segura
             if (typeof marked !== 'undefined') {
                 resultadoDiv.innerHTML = marked.parse(data.resumen);
             } else {
-                resultadoDiv.innerText = data.resumen;
+                resultadoDiv.innerText = data.resumen; // Fallback si falla el internet
             }
             resultadoDiv.style.display = 'block';
 
+            // 2. Extraer Mermaid
             document.querySelectorAll('code.language-mermaid').forEach(el => {
                 const div = document.createElement('div');
                 div.className = 'mermaid';
@@ -179,10 +207,21 @@
                 el.parentElement.replaceWith(div);
             });
 
+            // 3. Renderizar los mapas conceptuales
             if (typeof mermaid !== 'undefined') {
                 mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+                
+                // ATAQUE DIRECTO AL SVG: Le arrancamos las medidas fijas que pone Mermaid por defecto
+                // Obligándolo a acatar nuestro CSS y reducirse para caber en la hoja.
+                document.querySelectorAll('.mermaid svg').forEach(svg => {
+                    svg.removeAttribute('width');
+                    svg.removeAttribute('height');
+                    svg.style.width = '100%';
+                    svg.style.height = 'auto';
+                });
             }
 
+            // 4. Renderizar Matemáticas con MathJax
             if (window.MathJax && window.MathJax.typesetPromise) {
                 await MathJax.typesetPromise([resultadoDiv]);
             }
@@ -197,44 +236,18 @@
         }
     });
 
-    // --- AQUÍ ESTÁ LA MAGIA DE LA CÁMARA ---
-    document.getElementById('btnDescargar').addEventListener('click', async () => {
+    document.getElementById('btnDescargar').addEventListener('click', () => {
         const elemento = document.getElementById('resultado');
-        const btn = document.getElementById('btnDescargar');
-
         if (typeof html2pdf !== 'undefined') {
-            btn.innerText = "📸 Capturando PDF...";
-            btn.disabled = true;
-
-            // 1. "Modo Fotografía": Quitamos las barras de desplazamiento (overflow) temporalmente
-            // para que la herramienta pueda ver el gráfico completo sin cortarlo a los lados.
-            const mermaids = document.querySelectorAll('.mermaid');
-            elemento.style.overflowX = 'visible';
-            mermaids.forEach(m => m.style.overflowX = 'visible');
-
-            // 2. Tomar la foto literal de la pantalla
             const opt = {
                 margin:       10,
                 filename:     'mis_apuntes_estructurados.pdf',
-                image:        { type: 'jpeg', quality: 1.0 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true, 
-                    // windowWidth forza a la "cámara" a alejar el zoom si hay un gráfico muy ancho
-                    windowWidth: elemento.scrollWidth + 50 
-                },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['css', 'legacy'] }
             };
-
-            await html2pdf().set(opt).from(elemento).save();
-
-            // 3. Devolver la página web a la normalidad
-            elemento.style.overflowX = 'auto';
-            mermaids.forEach(m => m.style.overflowX = 'auto');
-            
-            btn.innerText = "📄 Descargar PDF";
-            btn.disabled = false;
-
+            html2pdf().set(opt).from(elemento).save();
         } else {
             alert("La herramienta de PDF se está cargando, intenta en un segundo.");
         }
