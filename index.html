@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pizarra a Resumen</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/9.4.3/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
-        /* Fondo cálido como una mesa de escritorio */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f4ecd8;
@@ -14,185 +17,119 @@
             color: #333;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
-        /* Contenedor estilo Pizarrón de la escuela */
         .container {
-            background: #2b5b43; /* Verde pizarrón */
+            background: #2b5b43; 
             padding: 35px 30px;
             border-radius: 8px;
-            /* Marco de madera */
             border: 12px solid #8b5a2b; 
-            box-shadow: 
-                inset 0 0 20px rgba(0,0,0,0.3), /* Sombra interior del pizarrón */
-                10px 15px 25px rgba(0,0,0,0.3); /* Sombra exterior en el escritorio */
-            max-width: 600px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3), 10px 15px 25px rgba(0,0,0,0.3);
+            max-width: 700px;
             width: 100%;
         }
 
-        /* Texto estilo tiza */
-        h1 { 
-            color: #fdfdfd; 
-            font-size: 28px; 
-            text-align: center; 
-            margin-bottom: 5px; 
-            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
-        }
-        
-        p.subtitle { 
-            text-align: center; 
-            color: #d1e8e2; 
-            margin-bottom: 25px; 
-            font-weight: 500;
-            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-            line-height: 1.4;
-        }
+        h1 { color: #fdfdfd; font-size: 28px; text-align: center; margin-bottom: 5px; font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; text-shadow: 2px 2px 4px rgba(0,0,0,0.4); }
+        p.subtitle { text-align: center; color: #d1e8e2; margin-bottom: 25px; font-weight: 500; font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; line-height: 1.4; }
+        label { font-weight: bold; margin-top: 15px; display: block; font-size: 15px; color: #e8f4f1; font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;}
 
-        label { 
-            font-weight: bold; 
-            margin-top: 15px; 
-            display: block; 
-            font-size: 15px; 
-            color: #e8f4f1;
-            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-        }
-
-        /* Zona de subida de imagen */
+        /* Input para múltiples imágenes */
         input[type="file"] {
-            width: 100%; 
-            padding: 12px; 
-            margin-top: 8px; 
-            margin-bottom: 15px;
-            background: rgba(255, 255, 255, 0.1); 
-            border: 2px dashed #a8c2b7; 
-            border-radius: 6px; 
-            color: white; 
-            box-sizing: border-box;
-            cursor: pointer;
+            width: 100%; padding: 12px; margin-top: 8px; margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.1); border: 2px dashed #a8c2b7; 
+            border-radius: 6px; color: white; box-sizing: border-box; cursor: pointer;
         }
 
-        /* Botón estilo Lápiz Escolar */
+        /* Galería de vistas previas */
+        #preview-container {
+            display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 15px;
+        }
+        .preview-img {
+            max-width: 100px; max-height: 100px; border: 4px solid #fdfdfd; 
+            box-shadow: 2px 4px 8px rgba(0,0,0,0.4); transform: rotate(-2deg); background: white;
+            object-fit: cover;
+        }
+
+        /* Botones */
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
         button {
-            width: 100%; 
-            padding: 14px; 
-            background-color: #f1c40f; /* Amarillo lápiz */
-            color: #333;
-            border: 3px solid #d4ac0d; 
-            border-radius: 8px; 
-            font-size: 18px; 
-            font-weight: 900;
-            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-            cursor: pointer; 
-            transition: transform 0.2s, background 0.3s; 
-            margin-top: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            flex: 1; padding: 14px; color: #333; border-radius: 8px; 
+            font-size: 17px; font-weight: 900; font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            cursor: pointer; transition: transform 0.2s, background 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
-        button:hover { 
-            background-color: #f39c12; 
-            transform: translateY(-2px);
-        }
-        button:disabled { 
-            background-color: #bdc3c7; 
-            border-color: #95a5a6;
-            color: #7f8c8d;
-            cursor: not-allowed; 
-            transform: none;
-            box-shadow: none;
-        }
-
-        #loader { 
-            text-align: center; 
-            display: none; 
-            margin-top: 20px; 
-            font-weight: bold; 
-            color: #f1c40f; 
-            font-family: 'Comic Sans MS', sans-serif;
-            font-size: 16px;
-        }
-
-        /* Vista previa estilo foto impresa o polaroid */
-        #preview { 
-            max-width: 90%; 
-            margin: 15px auto; 
-            display: none; 
-            border: 8px solid #fdfdfd; 
-            box-shadow: 3px 5px 15px rgba(0,0,0,0.4); 
-            transform: rotate(-2deg); /* Ligeramente inclinada */
-            background: white;
-        }
-
-        /* Resultado estilo Hoja de Cuaderno Rayada */
-        #resultado {
-            margin-top: 25px; 
-            padding: 10px 20px 20px 45px; /* Espacio extra a la izq para el margen rojo */
-            background-color: #fffdf8;
-            /* Crear las líneas del cuaderno */
-            background-image: 
-                linear-gradient(90deg, transparent 35px, #e74c3c 35px, #e74c3c 37px, transparent 37px), /* Línea roja vertical */
-                repeating-linear-gradient(transparent, transparent 27px, #abced4 28px); /* Líneas azules horizontales */
-            border-radius: 2px; 
-            display: none;
-            white-space: pre-wrap; 
-            line-height: 28px; /* Debe coincidir con las líneas azules */
-            color: #2c3e50;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 16px;
-            box-shadow: 2px 4px 10px rgba(0,0,0,0.3);
-            position: relative;
-        }
+        #btnProcesar { background-color: #f1c40f; border: 3px solid #d4ac0d; }
+        #btnProcesar:hover { background-color: #f39c12; transform: translateY(-2px); }
+        #btnProcesar:disabled { background-color: #bdc3c7; border-color: #95a5a6; color: #7f8c8d; cursor: not-allowed; transform: none; box-shadow: none; }
         
-        /* Cinta adhesiva decorativa para la hoja de cuaderno */
-        #resultado::before {
-            content: '';
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%) rotate(2deg);
-            width: 100px;
-            height: 25px;
-            background: rgba(255, 255, 255, 0.4);
-            border: 1px solid rgba(0,0,0,0.1);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        #btnDescargar { background-color: #e74c3c; color: white; border: 3px solid #c0392b; display: none; }
+        #btnDescargar:hover { background-color: #c0392b; transform: translateY(-2px); }
+
+        #loader { text-align: center; display: none; margin-top: 20px; font-weight: bold; color: #f1c40f; font-family: 'Comic Sans MS', sans-serif; font-size: 16px; }
+
+        /* Resultado y Estilos Dinámicos (Markdown/Mermaid) */
+        #resultado {
+            margin-top: 25px; padding: 20px 30px 30px 45px; background-color: #fffdf8;
+            background-image: linear-gradient(90deg, transparent 35px, #e74c3c 35px, #e74c3c 37px, transparent 37px), repeating-linear-gradient(transparent, transparent 27px, #abced4 28px);
+            border-radius: 2px; display: none; line-height: 28px; color: #2c3e50; font-size: 16px; box-shadow: 2px 4px 10px rgba(0,0,0,0.3); position: relative;
         }
+        #resultado::before {
+            content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%) rotate(2deg); width: 100px; height: 25px; background: rgba(255, 255, 255, 0.4); border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* MAGIA: Centrado de títulos generado por Markdown */
+        #resultado h1, #resultado h2, #resultado h3 { text-align: center; margin-top: 20px; margin-bottom: 10px; color: #2b5b43; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 4px; display: inline-block; width: 100%; box-sizing: border-box;}
+        #resultado ul { margin-top: 0; padding-left: 20px; }
+        
+        /* Contenedor del mapa conceptual */
+        .mermaid { background: white; border: 2px solid #2c3e50; padding: 15px; border-radius: 8px; display: flex; justify-content: center; margin: 20px 0; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>📝 Pizarra a Resumen </h1>
-    <p class="subtitle">Optimiza tu tiempo de estudio. Sube fotografías de pizarrones o libretas y la plataforma las transformará en apuntes digitales estructurados y listos para repasar.</p>
+    <p class="subtitle">Sube fotografías de pizarrones o libretas y la plataforma las transformará en apuntes digitales estructurados, mapas conceptuales y listos para descargar.</p>
 
-    <label for="imageUpload">Agrega aquí tus fotos</label>
-    <input type="file" id="imageUpload" accept="image/*">
+    <label for="imageUpload">Selecciona una o varias fotos a la vez:</label>
+    <input type="file" id="imageUpload" accept="image/*" multiple>
     
-    <div style="text-align: center;">
-        <img id="preview" alt="Vista previa de la imagen">
+    <div id="preview-container"></div>
+
+    <div class="btn-group">
+        <button id="btnProcesar">✏️ Generar apuntes</button>
+        <button id="btnDescargar">📄 Descargar PDF</button>
     </div>
 
-    <button id="btnProcesar">Generar apuntes </button>
-
-    <div id="loader">Espera un momento, estamos generando tu resumen... ;) ⏳</div>
+    <div id="loader">Extrayendo información y armando diagramas... ⏳</div>
     <div id="resultado"></div>
 </div>
 
 <script>
+    // Inicializar la librería de mapas conceptuales
+    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
+
     const imageUpload = document.getElementById('imageUpload');
-    const preview = document.getElementById('preview');
-    let base64Image = "";
+    const previewContainer = document.getElementById('preview-container');
+    let base64ImagesArray = []; // Ahora es un arreglo
 
     imageUpload.addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (file) {
+        previewContainer.innerHTML = '';
+        base64ImagesArray = [];
+        const files = event.target.files;
+        
+        for (let file of files) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                preview.src = e.target.result;
-                preview.style.display = 'block';
-                base64Image = e.target.result.split(',')[1];
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'preview-img';
+                previewContainer.appendChild(img);
+                // Extraer base64 y guardarlo en el array
+                base64ImagesArray.push(e.target.result.split(',')[1]);
             };
             reader.readAsDataURL(file);
         }
@@ -202,34 +139,44 @@
         const resultadoDiv = document.getElementById('resultado');
         const loader = document.getElementById('loader');
         const btn = document.getElementById('btnProcesar');
+        const btnDescargar = document.getElementById('btnDescargar');
 
-        if (!base64Image) {
-            alert("Por favor, sube una imagen primero.");
+        if (base64ImagesArray.length === 0) {
+            alert("Por favor, sube al menos una imagen.");
             return;
         }
 
         btn.disabled = true;
+        btnDescargar.style.display = 'none';
         loader.style.display = 'block';
         resultadoDiv.style.display = 'none';
 
-        // LLAMADA AL BACKEND PROPIO EN LUGAR DE GOOGLE DIRECTAMENTE
-        const url = "/api/resumen"; 
-
         try {
-            const response = await fetch(url, {
+            const response = await fetch("/api/resumen", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ base64Image: base64Image })
+                // Enviamos el array completo al backend
+                body: JSON.stringify({ images: base64ImagesArray }) 
             });
 
             const data = await response.json();
+            if (!response.ok || data.error) throw new Error(data.error || "Error en el servidor");
 
-            if (!response.ok || data.error) {
-                throw new Error(data.error || "Error desconocido en el servidor");
-            }
+            let textoCrudo = data.resumen;
 
-            resultadoDiv.textContent = data.resumen;
+            // 1. Detectar bloques de mapas conceptuales (Mermaid) y prepararlos
+            const mermaidRegex = /```mermaid([\s\S]*?)```/g;
+            textoCrudo = textoCrudo.replace(mermaidRegex, '<div class="mermaid">$1</div>');
+
+            // 2. Procesar Markdown (los ### se convertirán en <h2> centrados gracias al CSS)
+            resultadoDiv.innerHTML = marked.parse(textoCrudo);
             resultadoDiv.style.display = 'block';
+
+            // 3. Renderizar los mapas conceptuales gráficos
+            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
+
+            // 4. Mostrar botón de descarga
+            btnDescargar.style.display = 'block';
 
         } catch (error) {
             alert("Error: " + error.message);
@@ -237,6 +184,20 @@
             btn.disabled = false;
             loader.style.display = 'none';
         }
+    });
+
+    // Función para exportar el apunte a PDF manteniendo el diseño del cuaderno
+    document.getElementById('btnDescargar').addEventListener('click', () => {
+        const elemento = document.getElementById('resultado');
+        const opt = {
+            margin:       10,
+            filename:     'mis_apuntes_estructurados.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        // Generar y descargar
+        html2pdf().set(opt).from(elemento).save();
     });
 </script>
 
