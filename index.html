@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pizarra a Resumen</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/9.4.3/mermaid.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <script>
         window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']]
-            },
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
             startup: { typeset: false } 
         };
     </script>
@@ -85,22 +83,9 @@
         
         .mermaid { background: white; border: 2px solid #2c3e50; padding: 15px; border-radius: 8px; display: flex; justify-content: center; margin: 20px 0; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-        /* ========================================= */
-        /* NUEVAS REGLAS PARA ARREGLAR EL CORTE DEL PDF */
-        /* ========================================= */
-        
-        /* 1. Forzar al gráfico SVG a ajustarse al ancho de la hoja */
-        .mermaid svg { 
-            max-width: 100% !important; 
-            height: auto !important; 
-        }
-        
-        /* 2. Evitar que diagramas, títulos o puntos de lista se corten a la mitad en saltos de página */
-        h1, h2, h3, .mermaid, li { 
-            page-break-inside: avoid; 
-        }
-        /* ========================================= */
-        
+        /* Ajustes para evitar cortes en el PDF */
+        .mermaid svg { max-width: 100% !important; height: auto !important; }
+        h1, h2, h3, .mermaid, li { page-break-inside: avoid; }
     </style>
 </head>
 <body>
@@ -124,10 +109,7 @@
 </div>
 
 <script>
-    // Inicialización blindada
-    try {
-        if (typeof mermaid !== 'undefined') mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
-    } catch (e) { console.warn("Mermaid inicializó con retraso"); }
+    mermaid.initialize({ startOnLoad: false, theme: 'neutral' });
 
     const imageUpload = document.getElementById('imageUpload');
     const previewContainer = document.getElementById('preview-container');
@@ -183,13 +165,11 @@
             const data = await response.json();
             if (!response.ok || data.error) throw new Error(data.error || "Error en el servidor");
 
-            if (typeof marked !== 'undefined') {
-                resultadoDiv.innerHTML = marked.parse(data.resumen);
-            } else {
-                resultadoDiv.innerText = data.resumen; 
-            }
+            // 1. Procesar Markdown (Texto base)
+            resultadoDiv.innerHTML = marked.parse(data.resumen);
             resultadoDiv.style.display = 'block';
 
+            // 2. Extraer y preparar Mermaid AISLADO de MathJax
             document.querySelectorAll('code.language-mermaid').forEach(el => {
                 const div = document.createElement('div');
                 div.className = 'mermaid';
@@ -197,10 +177,10 @@
                 el.parentElement.replaceWith(div);
             });
 
-            if (typeof mermaid !== 'undefined') {
-                mermaid.init(undefined, document.querySelectorAll('.mermaid'));
-            }
+            // 3. Dibujar diagramas
+            mermaid.init(undefined, document.querySelectorAll('.mermaid'));
 
+            // 4. Procesar Matemáticas (LaTeX)
             if (window.MathJax && window.MathJax.typesetPromise) {
                 await MathJax.typesetPromise([resultadoDiv]);
             }
