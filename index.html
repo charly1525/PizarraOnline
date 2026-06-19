@@ -54,7 +54,6 @@
             border-radius: 6px; color: white; box-sizing: border-box; cursor: pointer;
         }
 
-        /* Contenedor seguro para múltiples fotos */
         #preview-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-bottom: 15px; }
         .preview-img { max-width: 100px; max-height: 100px; border: 4px solid #fdfdfd; box-shadow: 2px 4px 8px rgba(0,0,0,0.4); transform: rotate(-2deg); background: white; object-fit: cover; }
 
@@ -85,6 +84,23 @@
         #resultado ul { margin-top: 0; padding-left: 20px; }
         
         .mermaid { background: white; border: 2px solid #2c3e50; padding: 15px; border-radius: 8px; display: flex; justify-content: center; margin: 20px 0; overflow-x: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+        /* ========================================= */
+        /* NUEVAS REGLAS PARA ARREGLAR EL CORTE DEL PDF */
+        /* ========================================= */
+        
+        /* 1. Forzar al gráfico SVG a ajustarse al ancho de la hoja */
+        .mermaid svg { 
+            max-width: 100% !important; 
+            height: auto !important; 
+        }
+        
+        /* 2. Evitar que diagramas, títulos o puntos de lista se corten a la mitad en saltos de página */
+        h1, h2, h3, .mermaid, li { 
+            page-break-inside: avoid; 
+        }
+        /* ========================================= */
+        
     </style>
 </head>
 <body>
@@ -93,17 +109,17 @@
     <h1>📝 Pizarra a Resumen </h1>
     <p class="subtitle">Optimiza tu tiempo de estudio. Sube fotografías de pizarrones o libretas y la plataforma las transformará en apuntes digitales estructurados y listos para repasar.</p>
 
-    <label for="imageUpload">Agrega aquí tus fotos:</label>
+    <label for="imageUpload">Agrega aquí tus fotos</label>
     <input type="file" id="imageUpload" accept="image/*" multiple>
     
     <div id="preview-container"></div>
 
     <div class="btn-group">
-        <button id="btnProcesar">✏️ Generar apuntes</button>
+        <button id="btnProcesar">Generar apuntes</button>
         <button id="btnDescargar">📄 Descargar PDF</button>
     </div>
 
-    <div id="loader">Analizando imágenes y armando gráficos... ⏳</div>
+    <div id="loader">El backend está procesando tu imagen con IA... ⏳</div>
     <div id="resultado"></div>
 </div>
 
@@ -117,9 +133,8 @@
     const previewContainer = document.getElementById('preview-container');
     let base64ImagesArray = []; 
 
-    // Evento de selección de fotos súper compatible
     imageUpload.addEventListener('change', function(event) {
-        if (!previewContainer) return; // Evita crasheos si el HTML está incompleto
+        if (!previewContainer) return; 
         
         previewContainer.innerHTML = '';
         base64ImagesArray = [];
@@ -127,7 +142,6 @@
         
         if (!files || files.length === 0) return;
 
-        // Bucle "Old School" para evitar bugs en navegadores estrictos
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const reader = new FileReader();
@@ -169,15 +183,13 @@
             const data = await response.json();
             if (!response.ok || data.error) throw new Error(data.error || "Error en el servidor");
 
-            // 1. Procesar Markdown de forma segura
             if (typeof marked !== 'undefined') {
                 resultadoDiv.innerHTML = marked.parse(data.resumen);
             } else {
-                resultadoDiv.innerText = data.resumen; // Fallback si falla el internet
+                resultadoDiv.innerText = data.resumen; 
             }
             resultadoDiv.style.display = 'block';
 
-            // 2. Extraer Mermaid
             document.querySelectorAll('code.language-mermaid').forEach(el => {
                 const div = document.createElement('div');
                 div.className = 'mermaid';
@@ -185,12 +197,10 @@
                 el.parentElement.replaceWith(div);
             });
 
-            // 3. Renderizar los mapas conceptuales
             if (typeof mermaid !== 'undefined') {
                 mermaid.init(undefined, document.querySelectorAll('.mermaid'));
             }
 
-            // 4. Renderizar Matemáticas con MathJax
             if (window.MathJax && window.MathJax.typesetPromise) {
                 await MathJax.typesetPromise([resultadoDiv]);
             }
